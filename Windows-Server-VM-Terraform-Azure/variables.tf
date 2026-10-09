@@ -51,6 +51,17 @@ variable "data_disk_size_gb" {
   default     = 0
 }
 
+variable "data_disk_drive_letter" {
+  description = "Lettre du lecteur du disque de données (créé automatiquement). Éviter C et D (réservées à Windows et au disque temporaire)."
+  type        = string
+  default     = "F"
+
+  validation {
+    condition     = can(regex("^[E-Z]$", var.data_disk_drive_letter))
+    error_message = "Utilisez une lettre de E à Z (majuscule)."
+  }
+}
+
 variable "address_space" {
   description = "Plage d'adresses du réseau virtuel."
   type        = string
@@ -100,4 +111,10 @@ variable "license_type" {
   description = "null = licence incluse (paiement à l'usage). Windows_Server = Azure Hybrid Benefit (si vous avez Software Assurance)."
   type        = string
   default     = null
+}
+
+variable "enable_hotpatch" {
+  description = "Active le hotpatching (mises à jour sans redémarrage). À mettre à false si vous choisissez une image_sku qui n'est pas de type Azure Edition."
+  type        = bool
+  default     = true
 }

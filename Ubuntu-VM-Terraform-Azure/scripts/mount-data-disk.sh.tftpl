@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Formate (si vide) et monte le disque de données Azure (LUN 0).
+# Script idempotent : peut être relancé sans risque, ne reformate jamais un disque déjà formaté.
+set -euo pipefail
+
+MOUNT_POINT="${mount_point}"
+DEVICE="/dev/disk/azure/scsi1/lun0"
+
+# 1) Attendre l'apparition du disque (règles udev Azure)
+for _ in $(seq 1 60); do
+  [[ -b "$DEVICE" ]] && break
+  sleep 5
+done
+[[ -b "$DEVICE" ]] || { echo "Disque $DEVICE introuvable" >&2; exit 1; }
+
+# 2) Formater uniquement s'il n'y a aucun système de fichiers
+if ! blkid "$DEVICE" >/dev/null 2>&1; then
+  echo "==> Formatage de $DEVICE en ext4"
+  mkfs.ext4 -F -L datadisk "$DEVICE"
+fi
+
+# 3) Montage persistant (UUID + nofail : la VM démarre même si le disque est détaché)
+UUID="$(blkid -s UUID -o value "$DEVICE")"
+mkdir -p "$MOUNT_POINT"
+if ! grep -q "$UUID" /etc/fstab; then
+  echo "UUID=$UUID $MOUNT_POINT ext4 defaults,nofail 0 2" >> /etc/fstab
+fi
+systemctl daemon-reload
+mountpoint -q "$MOUNT_POINT" || mount "$MOUNT_POINT"
+
+# 4) Droits : accessible à l'administrateur
+chmod 0775 "$MOUNT_POINT"
+chown "${admin_username}:${admin_username}" "$MOUNT_POINT"
+echo "==> $DEVICE monté sur $MOUNT_POINT"

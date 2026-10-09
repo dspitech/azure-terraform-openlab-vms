@@ -20,7 +20,7 @@ Les réseaux ne se chevauchent pas : les trois VM peuvent être déployées en m
 
 - Région `swedencentral`, IP publique statique (SKU Standard), disque OS Premium
 - NSG minimal : un seul port ouvert, extensible via `extra_inbound_ports`
-- Disque de données optionnel (`data_disk_size_gb`, désactivé par défaut)
+- Disque de données optionnel (`data_disk_size_gb`, désactivé par défaut) : **créé, formaté et monté automatiquement par Terraform** (extension Azure, sans cloud-init)
 - Démarrage sécurisé et vTPM (Trusted Launch)
 - State local par défaut, backend Azure Storage optionnel (`setup-backend.sh`)
 - Tags `project` et `managed_by` sur toutes les ressources
@@ -31,7 +31,8 @@ Les réseaux ne se chevauchent pas : les trois VM peuvent être déployées en m
 ├── versions.tf               # Terraform et providers
 ├── variables.tf              # Variables et valeurs par défaut
 ├── main.tf                   # Resource Group, réseau, IP publique, NSG
-├── vm.tf                     # Machine virtuelle
+├── vm.tf                     # Machine virtuelle, disque de données et montage automatique
+├── scripts/                  # Script de montage du disque (modèle Terraform)
 ├── outputs.tf                # IP et informations de connexion
 ├── terraform.tfvars.example  # Exemple de personnalisation
 ├── backend.tf.example        # Backend distant (optionnel)
@@ -49,8 +50,12 @@ Les réseaux ne se chevauchent pas : les trois VM peuvent être déployées en m
 Depuis le dossier de la VM souhaitée :
 
 ```bash
-terraform init  && terraform validate && terraform plan && terraform apply -auto-approve
+cd <dossier-de-la-vm>
+cp terraform.tfvars.example terraform.tfvars    # puis adapter (voir le README du projet)
+terraform fmt && terraform init && terraform validate && terraform plan && terraform apply -auto-approve
 ```
+
+Le détail pas à pas (restriction d'IP, activation du disque de données, vérifications) est dans le README de chaque projet.
 
 Connexion :
 
@@ -68,5 +73,6 @@ Suppression : `terraform destroy -auto-approve`
 ## Points d'attention
 
 - **Sécurité** : par défaut, le port d'administration est ouvert à tout Internet. Restreignez-le avec `allowed_source_cidr = "<votre-ip>/32"` dans `terraform.tfvars`.
+- **Windows Server** : l'image *Azure Edition* est compatible hotpatch ; la VM utilise donc `patch_mode = "AutomaticByPlatform"` (`enable_hotpatch = false` pour une image non compatible).
 - **Windows 11** : le déploiement sur Azure nécessite une licence éligible (Microsoft 365 E3/E5/F3, Windows VDA ou Visual Studio).
 - **State** : il contient la clé SSH ou le mot de passe administrateur. Ne le publiez pas (`.gitignore` fourni).

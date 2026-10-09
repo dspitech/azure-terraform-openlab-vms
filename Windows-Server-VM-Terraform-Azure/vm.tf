@@ -1,5 +1,5 @@
 # ============================================================
-# VM Windows 11 Pro (client) — machine virtuelle (sans cloud-init)
+# VM Windows Server 2025 Datacenter — machine virtuelle (sans cloud-init)
 # ============================================================
 
 # Mot de passe administrateur généré (récupérable via terraform output)
@@ -26,7 +26,10 @@ resource "azurerm_windows_virtual_machine" "vm" {
   timezone              = var.timezone
   tags                  = var.tags
 
-  patch_mode          = "AutomaticByOS"
+  # Les images "Azure Edition" de Windows Server 2025 sont compatibles hotpatch :
+  # le provider impose alors patch_mode = "AutomaticByPlatform".
+  patch_mode          = "AutomaticByPlatform"
+  hotpatching_enabled = var.enable_hotpatch
   secure_boot_enabled = true
   vtpm_enabled        = true
 
@@ -36,8 +39,8 @@ resource "azurerm_windows_virtual_machine" "vm" {
   }
 
   source_image_reference {
-    publisher = "MicrosoftWindowsDesktop"
-    offer     = var.image_offer
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
     sku       = var.image_sku
     version   = "latest"
   }
@@ -47,7 +50,8 @@ resource "azurerm_windows_virtual_machine" "vm" {
 
 # ------------------------------------------------------------
 # Disque de données optionnel (data_disk_size_gb > 0)
-# Non formaté : à initialiser depuis le système (voir README)
+# Créé, attaché, puis initialisé et monté automatiquement
+# par l'extension de script ci-dessous (aucune action manuelle).
 # ------------------------------------------------------------
 resource "azurerm_managed_disk" "data" {
   count                = var.data_disk_size_gb > 0 ? 1 : 0
@@ -66,4 +70,22 @@ resource "azurerm_virtual_machine_data_disk_attachment" "data" {
   virtual_machine_id = azurerm_windows_virtual_machine.vm.id
   lun                = 0
   caching            = "ReadWrite"
+}
+
+# Initialisation GPT + partition + formatage NTFS, exécutés par l'agent Azure (PowerShell)
+resource "azurerm_virtual_machine_extension" "mount_data_disk" {
+  count                      = var.data_disk_size_gb > 0 ? 1 : 0
+  name                       = "mount-data-disk"
+  virtual_machine_id         = azurerm_windows_virtual_machine.vm.id
+  publisher                  = "Microsoft.Compute"
+  type                       = "CustomScriptExtension"
+  type_handler_version       = "1.10"
+  auto_upgrade_minor_version = true
+  tags                       = var.tags
+
+  protected_settings = jsonencode({
+    commandToExecute = "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${textencodebase64(templatefile("${path.module}/scripts/mount-data-disk.ps1.tftpl", { drive_letter = var.data_disk_drive_letter }), "UTF-16LE")}"
+  })
+
+  depends_on = [azurerm_virtual_machine_data_disk_attachment.data]
 }

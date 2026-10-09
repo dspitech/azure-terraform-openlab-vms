@@ -55,7 +55,8 @@ resource "azurerm_linux_virtual_machine" "vm" {
 
 # ------------------------------------------------------------
 # Disque de données optionnel (data_disk_size_gb > 0)
-# Non formaté : à initialiser depuis le système (voir README)
+# Créé, attaché, puis initialisé et monté automatiquement
+# par l'extension de script ci-dessous (aucune action manuelle).
 # ------------------------------------------------------------
 resource "azurerm_managed_disk" "data" {
   count                = var.data_disk_size_gb > 0 ? 1 : 0
@@ -74,4 +75,25 @@ resource "azurerm_virtual_machine_data_disk_attachment" "data" {
   virtual_machine_id = azurerm_linux_virtual_machine.vm.id
   lun                = 0
   caching            = "ReadWrite"
+}
+
+# Formatage (ext4) et montage persistant dans /etc/fstab, exécutés par l'agent Azure
+resource "azurerm_virtual_machine_extension" "mount_data_disk" {
+  count                      = var.data_disk_size_gb > 0 ? 1 : 0
+  name                       = "mount-data-disk"
+  virtual_machine_id         = azurerm_linux_virtual_machine.vm.id
+  publisher                  = "Microsoft.Azure.Extensions"
+  type                       = "CustomScript"
+  type_handler_version       = "2.1"
+  auto_upgrade_minor_version = true
+  tags                       = var.tags
+
+  protected_settings = jsonencode({
+    script = base64encode(templatefile("${path.module}/scripts/mount-data-disk.sh.tftpl", {
+      mount_point    = var.data_disk_mount_point
+      admin_username = var.admin_username
+    }))
+  })
+
+  depends_on = [azurerm_virtual_machine_data_disk_attachment.data]
 }

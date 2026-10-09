@@ -1,0 +1,27 @@
+# Initialise (si brut), partitionne et formate le disque de données Azure.
+# Script idempotent : ne touche jamais à un disque déjà initialisé.
+$ErrorActionPreference = 'Stop'
+$DriveLetter = '${drive_letter}'
+
+# Évite la fenêtre "Formater le disque ?" de l'explorateur pendant l'opération
+Stop-Service -Name ShellHWDetection -ErrorAction SilentlyContinue
+
+# 1) Attendre l'apparition du disque brut (RAW)
+$disk = $null
+for ($i = 0; $i -lt 60 -and -not $disk; $i++) {
+    $disk = Get-Disk | Where-Object PartitionStyle -eq 'RAW' | Select-Object -First 1
+    if (-not $disk) { Start-Sleep -Seconds 5 }
+}
+
+if ($disk) {
+    Write-Output "Initialisation du disque $($disk.Number)"
+    $disk | Initialize-Disk -PartitionStyle GPT -PassThru |
+        New-Partition -DriveLetter $DriveLetter -UseMaximumSize |
+        Format-Volume -FileSystem NTFS -NewFileSystemLabel 'Data' -Confirm:$false | Out-Null
+} elseif (-not (Get-Volume -DriveLetter $DriveLetter -ErrorAction SilentlyContinue)) {
+    throw "Aucun disque brut trouvé et le volume $DriveLetter`: n'existe pas."
+} else {
+    Write-Output "Volume $DriveLetter`: déjà présent : rien à faire."
+}
+
+Start-Service -Name ShellHWDetection -ErrorAction SilentlyContinue

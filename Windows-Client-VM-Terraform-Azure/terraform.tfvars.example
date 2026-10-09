@@ -1,10 +1,11 @@
 # Copiez ce fichier en terraform.tfvars puis adaptez-le.
 # subscription_id   = "00000000-0000-0000-0000-000000000000"
 # location          = "swedencentral"
-# rg_name           = "OpenLab-Ubuntu-RG"
-# vm_name           = "OpenLab-Ubuntu"
+# rg_name           = "OpenLab-WinClient-RG"
+# vm_name           = "OpenLab-WinCli"
 # vm_size           = "Standard_B2s_v2"
-# data_disk_size_gb = 64
+# data_disk_size_gb = 64             # > 0 : crée, attache, formate et monte le disque
+# data_disk_drive_letter = "F"       # lettre du lecteur (initialisé et formaté automatiquement)
 
 # Recommandé : restreindre l'accès à votre IP publique (curl -s ifconfig.me)
 # allowed_source_cidr = "203.0.113.10/32"

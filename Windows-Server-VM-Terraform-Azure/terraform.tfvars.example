@@ -4,7 +4,8 @@
 # rg_name           = "OpenLab-WinServer-RG"
 # vm_name           = "OpenLab-WinSrv"
 # vm_size           = "Standard_D2s_v5"
-# data_disk_size_gb = 64
+# data_disk_size_gb = 64             # > 0 : crée, attache, formate et monte le disque
+# data_disk_drive_letter = "F"       # lettre du lecteur (initialisé et formaté automatiquement)
 
 # Recommandé : restreindre l'accès à votre IP publique (curl -s ifconfig.me)
 # allowed_source_cidr = "203.0.113.10/32"
