@@ -1,0 +1,14 @@
+# Backend distant OPTIONNEL.
+# 1) ./setup-backend.sh   (génère automatiquement backend.tf)
+# 2) terraform init
+#
+# Sans backend.tf, le state reste en local (terraform.tfstate).
+
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "OpenLab-TFState-RG"
+    storage_account_name = "<nom-du-storage-account>"
+    container_name       = "tfstate"
+    key                  = "openlab-winserver.terraform.tfstate"
+  }
+}

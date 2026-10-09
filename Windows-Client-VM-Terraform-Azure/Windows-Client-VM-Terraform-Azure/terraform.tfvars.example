@@ -1,0 +1,12 @@
+# Copiez ce fichier en terraform.tfvars puis adaptez-le.
+# subscription_id   = "00000000-0000-0000-0000-000000000000"
+# location          = "swedencentral"
+# rg_name           = "OpenLab-WinClient-RG"
+# vm_name           = "OpenLab-WinCli"
+# vm_size           = "Standard_B2s_v2"
+# data_disk_size_gb = 64
+
+# Recommandé : restreindre l'accès à votre IP publique (curl -s ifconfig.me)
+# allowed_source_cidr = "203.0.113.10/32"
+
+# extra_inbound_ports = [80, 443]
