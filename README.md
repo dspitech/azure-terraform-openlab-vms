@@ -1,4 +1,4 @@
-# OpenLab — VM Azure avec Terraform
+# OpenLab - VM Azure avec Terraform 
 
 Trois déploiements Terraform indépendants pour créer rapidement une VM propre sur Azure : **Ubuntu**, **Windows 11** et **Windows Server**. Aucune VM n'utilise cloud-init : les machines sont livrées nues, prêtes à être configurées.
 
