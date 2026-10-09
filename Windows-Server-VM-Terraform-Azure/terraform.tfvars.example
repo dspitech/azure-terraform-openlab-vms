@@ -3,7 +3,7 @@
 # location          = "swedencentral"
 # rg_name           = "OpenLab-WinServer-RG"
 # vm_name           = "OpenLab-WinSrv"
-# vm_size           = "Standard_D2s_v5"
+vm_size             = "Standard_B2s_v2"
 # data_disk_size_gb = 64             # > 0 : crée, attache, formate et monte le disque
 # data_disk_drive_letter = "F"       # lettre du lecteur (initialisé et formaté automatiquement)
 
